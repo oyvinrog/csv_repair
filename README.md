@@ -13,7 +13,7 @@ pip install .
 Install directly from GitHub:
 
 ```bash
-pip install "git+https://github.com/oyvinrog/csv-repair.git"
+pip install "git+https://github.com/oyvinrog/csv_repair.git"
 ```
 
 Using SSH:
@@ -25,7 +25,7 @@ pip install "git+ssh://git@github.com/oyvinrog/csv-repair.git"
 Pin to a tag or branch:
 
 ```bash
-pip install "git+https://github.com/oyvinrog/csv-repair.git@v0.1.0"
+pip install "git+https://github.com/oyvinrog/csv_repair.git@v0.1.0"
 ```
 
 ## Usage

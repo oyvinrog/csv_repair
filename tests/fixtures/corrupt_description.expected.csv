@@ -1,0 +1,5 @@
+ID,CODE,DESCRIPTION,QTY,STATUS
+100,A1,"This is huge text,with many,commas,and even more",5,OPEN
+101,B2,Normal description,2,CLOSED
+102,C3,"Another extremely long description,that keeps going,with even,more commas,than expected",7,OPEN
+103,D4,Short row,1,

@@ -1,3 +1,3 @@
-from .core import repair
+from .core import AmbiguousRowError, repair
 
-__all__ = ["repair"]
+__all__ = ["repair", "AmbiguousRowError"]

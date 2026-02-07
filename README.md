@@ -44,10 +44,18 @@ Optional argument:
 csv_repair.repair("input.csv", "output.csv", description_column="NOTES")
 ```
 
+You can also pass multiple text columns:
+
+```python
+csv_repair.repair("input.csv", "output.csv", description_column=["DESCRIPTION", "NOTES"])
+```
+
 ## Behavior
 
 - Uses the header to determine expected column count.
 - Repairs rows with too many columns by merging overflow content into the description column.
+- If multiple text columns are provided, scores candidate repairs and picks the most plausible one.
+- If two or more candidates are similarly plausible, it prompts you to choose the correct row repair.
 - Pads rows with too few columns using empty values.
 - Writes valid CSV output using standard CSV quoting rules.
 - Preserves row order.

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import re
 from pathlib import Path
 from typing import Sequence
 
@@ -114,7 +115,7 @@ def _column_profiles(lines: list[str], expected_columns: int) -> dict[int, dict[
 def _repair_parts(
     parts: list[str],
     expected_columns: int,
-    description_indices: Sequence[int],
+    preferred_indices: Sequence[int],
     profiles: dict[int, dict[str, float]],
     line_number: int,
     raw_line: str,
@@ -127,12 +128,22 @@ def _repair_parts(
         return parts + [""] * (expected_columns - len(parts))
 
     candidates: list[tuple[int, list[str], float]] = []
-    for idx in description_indices:
+    for idx in range(expected_columns):
         row = _repair_parts_at_index(parts, expected_columns, idx)
-        score = _candidate_score(row, profiles, description_indices)
+        score = _candidate_score(row, profiles, preferred_indices, idx)
         candidates.append((idx, row, score))
 
     candidates.sort(key=lambda item: item[2])
+    valid_candidates = [item for item in candidates if _is_candidate_valid(item[1], profiles)]
+
+    if len(valid_candidates) == 1:
+        return valid_candidates[0][1]
+
+    if len(valid_candidates) > 1 and _should_ask_user(valid_candidates, preferred_indices):
+        return _ask_user_to_choose(valid_candidates, line_number, raw_line, header)
+
+    if len(valid_candidates) > 1:
+        return valid_candidates[0][1]
 
     if len(candidates) == 1:
         return candidates[0][1]
@@ -161,10 +172,11 @@ def _repair_parts_at_index(parts: list[str], expected_columns: int, description_
 def _candidate_score(
     row: Sequence[str],
     profiles: dict[int, dict[str, float]],
-    description_indices: Sequence[int],
+    preferred_indices: Sequence[int],
+    candidate_index: int,
 ) -> float:
     score = 0.0
-    text_columns = set(description_indices)
+    text_columns = set(preferred_indices)
 
     for idx, value in enumerate(row):
         profile = profiles.get(idx)
@@ -179,8 +191,14 @@ def _candidate_score(
         if profile["numeric_ratio"] >= 0.8 and not _is_number(value):
             score += 5.0
 
+        if profile["numeric_ratio"] <= 0.2 and _is_number(value):
+            score += 2.5
+
         if profile["non_empty_ratio"] >= 0.95 and value == "":
             score += 2.0
+
+    if candidate_index not in text_columns:
+        score += 0.5
 
     return score
 
@@ -202,6 +220,42 @@ def _is_ambiguous(candidates: Sequence[tuple[int, list[str], float]]) -> bool:
         return True
 
     return False
+
+
+def _should_ask_user(
+    valid_candidates: Sequence[tuple[int, list[str], float]],
+    preferred_indices: Sequence[int],
+) -> bool:
+    preferred = set(preferred_indices)
+    preferred_valid = [item for item in valid_candidates if item[0] in preferred]
+    if len(preferred_valid) > 1:
+        return True
+
+    best_idx = valid_candidates[0][0]
+    if best_idx not in preferred and len(valid_candidates) > 1:
+        return True
+
+    if len(valid_candidates) > 1:
+        delta = valid_candidates[1][2] - valid_candidates[0][2]
+        if delta <= 0.1:
+            return True
+
+    return False
+
+
+def _is_candidate_valid(row: Sequence[str], profiles: dict[int, dict[str, float]]) -> bool:
+    for idx, value in enumerate(row):
+        profile = profiles.get(idx)
+        if profile is None:
+            continue
+
+        if profile["numeric_ratio"] >= 0.8 and not _is_number(value):
+            return False
+
+        if profile["non_empty_ratio"] >= 0.95 and value == "":
+            return False
+
+    return True
 
 
 def _ask_user_to_choose(
@@ -244,8 +298,9 @@ def _is_number(value: str) -> bool:
     if value == "":
         return False
 
-    try:
-        float(value)
+    cleaned = value.strip()
+    if re.fullmatch(r"[+-]?\d+(\.\d+)?", cleaned):
         return True
-    except ValueError:
-        return False
+    if re.fullmatch(r"[+-]?\d{1,3}(,\d{3})+(\.\d+)?", cleaned):
+        return True
+    return False

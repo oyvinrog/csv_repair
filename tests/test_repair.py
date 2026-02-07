@@ -42,10 +42,12 @@ def test_repair_supports_custom_description_column(tmp_path: Path) -> None:
     assert _rows(output_file) == _rows(expected_file)
 
 
-def test_repair_supports_multiple_text_columns(tmp_path: Path) -> None:
+def test_repair_supports_multiple_text_columns(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     input_file = FIXTURES / "corrupt_multi_text_columns.csv"
     expected_file = FIXTURES / "corrupt_multi_text_columns.expected.csv"
     output_file = tmp_path / "multiple-text-columns.repaired.csv"
+
+    monkeypatch.setattr("builtins.input", lambda _: "1")
 
     csv_repair.repair(input_file, output_file, description_column=["DESCRIPTION", "NOTES"])
 
@@ -85,3 +87,17 @@ def test_repair_raises_ambiguous_error_when_user_input_unavailable(
 
     with pytest.raises(csv_repair.AmbiguousRowError, match="Ambiguous row at line 2"):
         csv_repair.repair(input_file, output_file, description_column=["INVOICE", "DESCRIPTION"])
+
+
+def test_repair_handles_invoice_with_unenclosed_comma_prefix(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    input_file = FIXTURES / "invoice_prefix_corrupt.csv"
+    expected_file = FIXTURES / "invoice_prefix_corrupt.expected.csv"
+    output_file = tmp_path / "invoice-prefix.repaired.csv"
+
+    monkeypatch.setattr("builtins.input", lambda _: "1")
+
+    csv_repair.repair(input_file, output_file)
+
+    assert _rows(output_file) == _rows(expected_file)

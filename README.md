@@ -10,6 +10,24 @@ Typical failure case: one column (often `DESCRIPTION`) contains a large free-tex
 pip install .
 ```
 
+Install directly from GitHub:
+
+```bash
+pip install "git+https://github.com/oyvinrog/csv-repair.git"
+```
+
+Using SSH:
+
+```bash
+pip install "git+ssh://git@github.com/oyvinrog/csv-repair.git"
+```
+
+Pin to a tag or branch:
+
+```bash
+pip install "git+https://github.com/oyvinrog/csv-repair.git@v0.1.0"
+```
+
 ## Usage
 
 ```python
